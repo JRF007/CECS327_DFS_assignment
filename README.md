@@ -1,4 +1,4 @@
-# Minimal DFS Starter
+# DFS
 
 This is the smallest practical starter for your part of the project.
 
