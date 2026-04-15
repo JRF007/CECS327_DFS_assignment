@@ -163,22 +163,3 @@ class DFS:
 
     def stat(self, filename: str) -> dict:
         return self._get_metadata(filename)
-
-
-if __name__ == "__main__":
-    chord = MockChord()
-    dfs = DFS(chord)
-
-    sample = Path("sample.txt")
-    if not sample.exists():
-        sample.write_text("hello from dfs\nthis is a starter file\n")
-
-    dfs.touch("demo.txt")
-    dfs.append("demo.txt", "sample.txt")
-
-    print("ls():", dfs.ls())
-    print("stat():", dfs.stat("demo.txt"))
-    print("read():")
-    print(dfs.read("demo.txt").decode())
-    print("head(5):", dfs.head("demo.txt", 5))
-    print("tail(5):", dfs.tail("demo.txt", 5))

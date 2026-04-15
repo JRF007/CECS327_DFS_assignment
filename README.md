@@ -22,6 +22,9 @@ This is the smallest practical starter for your part of the project.
 python3 main.py
 ```
 
-## What to replace later
-Right now it uses `MockChord` so it runs immediately.
-When you get your class Chord code connected, keep the `DFS` class and replace only the storage backend calls.
+## What this implementation demonstrates
+- File metadata stored in the DHT
+- Page-based file storage
+- Deterministic key mapping
+- Multi-page file reconstruction
+- Correctness validation (rebuild matches original)
