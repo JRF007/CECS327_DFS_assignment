@@ -2,7 +2,7 @@ import hashlib
 import json
 from pathlib import Path
 
-PAGE_SIZE = 4096
+PAGE_SIZE = 1024
 
 
 def sha1_hex(text: str) -> str:
@@ -13,13 +13,30 @@ class Node:
         self.node_id = node_id
         self.store = {}
         self.successor = None
+        self.predecessor = None
 
 class ChordRing:
     def __init__(self, num_nodes=5):
-        self.nodes = sorted([Node(i) for i in range(num_nodes)], key=lambda n: n.node_id)
-        
-        for i in range(len(self.nodes)):
-            self.nodes[i].successor = self.nodes[(i + 1) % len(self.nodes)]
+        max_id = 2**160 - 1
+        step = max_id // num_nodes
+        self.nodes = []
+        for i in range(num_nodes):
+            node_id = (i + 1) * step
+            self.nodes.append(Node(node_id))
+        self.nodes.sort(key=lambda n: n.node_id)
+
+        for i, node in enumerate(self.nodes):
+            node.successor = self.nodes[(i + 1) % len(self.nodes)]
+            node.predecessor = self.nodes[(i - 1) % len(self.nodes)]
+
+    def locate_successor(self, key: str):
+        key_int = int(key, 16)
+
+        for node in self.nodes:
+            if key_int <= node.node_id:
+                return node
+
+        return self.nodes[0]
 
 class ChordClient:
     def __init__(self, ring):
@@ -146,15 +163,6 @@ class DFS:
 
     def stat(self, filename: str) -> dict:
         return self._get_metadata(filename)
-    
-    def locate_successor(self, key_hash):
-        key_int = int(key_hash, 16)
-
-        for node in self.nodes:
-            if key_int <= node.node_id:
-                return node
-
-        return self.nodes[0]  # wrap around
 
 
 if __name__ == "__main__":
