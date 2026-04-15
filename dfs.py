@@ -8,22 +8,34 @@ PAGE_SIZE = 4096
 def sha1_hex(text: str) -> str:
     return hashlib.sha1(text.encode("utf-8")).hexdigest()
 
-
-class MockChord:
-    """Tiny stand-in for your real Chord layer."""
-
-    def __init__(self):
+class Node:
+    def __init__(self, node_id):
+        self.node_id = node_id
         self.store = {}
+        self.successor = None
 
-    def put(self, key: str, value: bytes) -> None:
-        self.store[key] = value
+class ChordRing:
+    def __init__(self, num_nodes=5):
+        self.nodes = sorted([Node(i) for i in range(num_nodes)], key=lambda n: n.node_id)
+        
+        for i in range(len(self.nodes)):
+            self.nodes[i].successor = self.nodes[(i + 1) % len(self.nodes)]
 
-    def get(self, key: str):
-        return self.store.get(key)
+class ChordClient:
+    def __init__(self, ring):
+        self.ring = ring
 
-    def delete(self, key: str) -> None:
-        self.store.pop(key, None)
+    def put(self, key, value):
+        node = self.ring.locate_successor(key)
+        node.store[key] = value
 
+    def get(self, key):
+        node = self.ring.locate_successor(key)
+        return node.store.get(key)
+
+    def delete(self, key):
+        node = self.ring.locate_successor(key)
+        node.store.pop(key, None)
 
 class DFS:
     def __init__(self, chord):
@@ -134,6 +146,15 @@ class DFS:
 
     def stat(self, filename: str) -> dict:
         return self._get_metadata(filename)
+    
+    def locate_successor(self, key_hash):
+        key_int = int(key_hash, 16)
+
+        for node in self.nodes:
+            if key_int <= node.node_id:
+                return node
+
+        return self.nodes[0]  # wrap around
 
 
 if __name__ == "__main__":
