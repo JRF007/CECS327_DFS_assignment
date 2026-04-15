@@ -22,17 +22,6 @@ This is the smallest practical starter for your part of the project.
 python3 main.py
 ```
 
-## Push to GitHub
-```bash
-git init
-git add .
-git commit -m "Initial DFS starter"
-git branch -M main
-git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO.git
-git push -u origin main
-```
-
 ## What to replace later
 Right now it uses `MockChord` so it runs immediately.
 When you get your class Chord code connected, keep the `DFS` class and replace only the storage backend calls.
->>>>>>> 9d421a3 (Initial DFS starter)
