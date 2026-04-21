@@ -50,13 +50,6 @@ The sorting workflow is:
 5. Combine the results into a globally sorted output file
 6. Store the result as a new DFS file
 
-### Where
-In `dfs.py`, inside `append()`:
-Right now pages go through:
-```python
-self.paxos_propose(guid, chunk)
-```
-
 ### Metadata Object
 ```json
 {
