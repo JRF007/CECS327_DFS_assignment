@@ -26,4 +26,12 @@ print("Contents:\n", dfs.read("records.txt").decode("utf-8"))
 print("Head 5:", dfs.head("records.txt", 5).decode())
 print("Tail 5:", dfs.tail("records.txt", 5).decode())
 dfs.delete_file("records.txt")
+dfs.delete_file("sorted_records.txt")
+dfs.delete_file("big_records.txt")
+print("Final files:", dfs.ls())
 print("After delete, files:", dfs.ls())
+print("\nPaxos Logs:")
+for i, node in enumerate(ring.nodes):
+    print(f"Node {i} ({node.node_id}) log:")
+    for entry in node.paxos_log:
+        print("   ", entry)

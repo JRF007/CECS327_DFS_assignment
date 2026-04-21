@@ -106,8 +106,9 @@ class DFS:
             "pages": [],
             "version": 1,
         }
-        self._put_metadata(metadata)
-
+        metadata_bytes = json.dumps(metadata).encode("utf-8")
+        metadata_guid = self.metadata_key(filename)
+        self.paxos_propose(metadata_guid, metadata_bytes)
         directory = self._get_directory()
         if filename not in directory:
             directory.append(filename)
@@ -130,11 +131,12 @@ class DFS:
             metadata["pages"].append(
                 {"page_no": page_no, "guid": guid, "size_bytes": len(chunk)}
             )
-
         metadata["num_pages"] = len(metadata["pages"])
         metadata["size_bytes"] += len(data)
         metadata["version"] += 1
-        self._put_metadata(metadata)
+        metadata_bytes = json.dumps(metadata).encode("utf-8")
+        metadata_guid = self.metadata_key(filename)
+        self.paxos_propose(metadata_guid, metadata_bytes)
 
     def read(self, filename: str) -> bytes:
         metadata = self._get_metadata(filename)
@@ -175,7 +177,6 @@ class DFS:
 
     def distributed_sort_file(self, filename: str, sorted_filename: str):
         data = self.read(filename).decode("utf-8")
-
         lines = data.split("\n")
         records = []
         for line in lines:
@@ -184,30 +185,27 @@ class DFS:
                 key = parts[0]
                 value = parts[1]
                 records.append((key, value))
-
         node_records = {}
         for node in self.chord.ring.nodes:
             node_records[node] = []
-
         for key, value in records:
-            node = self.chord.ring.locate_successor(key)
+            node = self.chord.ring.locate_successor(sha1_hex(key))
             node_records[node].append((key, value))
-
         for node in node_records:
             node_records[node].sort(key=lambda x : x[0])
-
         all_records = []
         for node in node_records:
             all_records.extend(node_records[node])
         all_records.sort(key=lambda x: x[0])
-
         sorted_lines = []
         for key, value in all_records:
             sorted_lines.append(key + "," + value)
-
         sorted_text = "\n".join(sorted_lines) + "\n"
-        self.touch(sorted_filename)
-
+        try:
+            self.touch(sorted_filename)
+        except FileExistsError:
+            self.delete_file(sorted_filename)
+            self.touch(sorted_filename)
         temp_file = "temp_sorted.txt"
         with open(temp_file, "w", encoding="utf-8") as f:
             f.write(sorted_text)
@@ -228,18 +226,15 @@ class DFS:
     def learn(self, node, o, t):
         node.paxos_log.append(("Learn", t, o))
         return True
+    
     def paxos_propose(self, key, value):
-        nodes = self.chord.ring.nodes
+        nodes = self.get_replica_nodes(key, 3)
         total = len(nodes)
-
         self.sequence_num += 1
         seq = self.sequence_num
-
         o = (key, value)
         t = seq
-
         accepts = 0
-
         for node in nodes:
             if self.accept(node, o, t):
                 accepts += 1
@@ -259,3 +254,18 @@ class DFS:
 
         else:
             print("Accepts Failed")
+
+
+    def get_replica_nodes(self, key, num_replicas=3):
+        start = self.chord.ring.locate_successor(key)
+        replicas = []
+        node = start
+        for _ in range(num_replicas):
+            replicas.append(node)
+            node = node.successor
+        return replicas
+
+    def put_replicated(self, key, value, num_replicas=3):
+        replicas = self.get_replica_nodes(key, num_replicas)
+        for node in replicas:
+            node.store[key] = value
