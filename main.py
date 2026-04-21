@@ -8,14 +8,11 @@ with open("big_sample.txt", "w", encoding="utf-8") as f:
         f.write(f"{i:04d},name{i}\n")
 dfs.touch("records.txt")
 dfs.append("records.txt", "sample.txt")
-
 dfs.distributed_sort_file("records.txt", "sorted_records.txt")
 print("Sorted file contents:")
 print(dfs.read("sorted_records.txt").decode("utf-8"))
-
 dfs.touch("big_records.txt")
 dfs.append("big_records.txt", "big_sample.txt")
-
 original = open("big_sample.txt", "rb").read()
 rebuilt = dfs.read("big_records.txt")
 print("Rebuild matches original:", original == rebuilt)
@@ -33,5 +30,6 @@ print("After delete, files:", dfs.ls())
 print("\nPaxos Logs:")
 for i, node in enumerate(ring.nodes):
     print(f"Node {i} ({node.node_id}) log:")
-    for entry in node.paxos_log:
-        print("   ", entry)
+    for msg_type, seq, op in node.paxos_log[:6]:
+        key = op[0]
+        print(f"   ({msg_type}, seq={seq}, key={key})")

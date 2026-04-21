@@ -1,9 +1,7 @@
 import hashlib
 import json
 from pathlib import Path
-
 PAGE_SIZE = 1024
-
 
 def sha1_hex(text: str) -> str:
     return hashlib.sha1(text.encode("utf-8")).hexdigest()
@@ -25,18 +23,15 @@ class ChordRing:
             node_id = (i + 1) * step
             self.nodes.append(Node(node_id))
         self.nodes.sort(key=lambda n: n.node_id)
-
         for i, node in enumerate(self.nodes):
             node.successor = self.nodes[(i + 1) % len(self.nodes)]
             node.predecessor = self.nodes[(i - 1) % len(self.nodes)]
 
     def locate_successor(self, key: str):
         key_int = int(key, 16)
-
         for node in self.nodes:
             if key_int <= node.node_id:
                 return node
-
         return self.nodes[0]
 
 class ChordClient:
@@ -98,7 +93,6 @@ class DFS:
             raise FileExistsError(filename)
         except FileNotFoundError:
             pass
-
         metadata = {
             "filename": filename,
             "size_bytes": 0,
@@ -118,16 +112,13 @@ class DFS:
         metadata = self._get_metadata(filename)
         data = Path(local_path).read_bytes()
         chunks = [data[i:i + page_size] for i in range(0, len(data), page_size)]
-
         start = metadata["num_pages"]
         for offset, chunk in enumerate(chunks):
             page_no = start + offset
             guid = self.page_key(filename, page_no)
-
             #self.chord.put(guid, chunk)
             #self.put_replicated(guid, chunk)
             self.paxos_propose(guid, chunk)
-
             metadata["pages"].append(
                 {"page_no": page_no, "guid": guid, "size_bytes": len(chunk)}
             )
@@ -160,7 +151,6 @@ class DFS:
         for page in metadata["pages"]:
             self.chord.delete(page["guid"])
         self.chord.delete(self.metadata_key(filename))
-
         directory = self._get_directory()
         if filename in directory:
             directory.remove(filename)
@@ -171,10 +161,7 @@ class DFS:
 
     def stat(self, filename: str) -> dict:
         return self._get_metadata(filename)
-
-
-
-
+    
     def distributed_sort_file(self, filename: str, sorted_filename: str):
         data = self.read(filename).decode("utf-8")
         lines = data.split("\n")
@@ -211,14 +198,6 @@ class DFS:
             f.write(sorted_text)
         self.append(sorted_filename, temp_file)
 
-
-    def put_replicated(self, key, value, num_replicas = 3):
-        node = self.chord.ring.locate_successor(key)
-
-        for i in range(num_replicas):
-            node.store[key] = value
-            node = node.successor
-
     def accept(self, node, o, t):
         node.paxos_log.append(("Accept", t, o))
         return True
@@ -238,20 +217,16 @@ class DFS:
         for node in nodes:
             if self.accept(node, o, t):
                 accepts += 1
-
         if accepts >= (total // 2 + 1):
             learns = 0
-
             for node in nodes:
                 if self.learn(node, o, t):
                     learns += 1
-
             if learns >= (total // 2 + 1):
                 self.put_replicated(key, value)
                 print(f"Paxos commit ({seq}): {key}")
             else:
                 print("Learns Failed")
-
         else:
             print("Accepts Failed")
 

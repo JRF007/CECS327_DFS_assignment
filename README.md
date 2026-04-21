@@ -4,9 +4,6 @@ This project implements a simplified Distributed File System (DFS) built on top 
 
 ## Overview
 The system extends a Chord-style key-value store into a file system by separating:
-
-- **Metadata objects** (file structure)
-- **Page objects** (file content chunks)
 Each file is distributed across multiple nodes using deterministic hashing.
 
 ## Run
@@ -53,7 +50,6 @@ The sorting workflow is:
 5. Combine the results into a globally sorted output file
 6. Store the result as a new DFS file
 
-## Metadata updates are not replicated through Paxos
 ### Where
 In `dfs.py`, inside `append()`:
 Right now pages go through:
